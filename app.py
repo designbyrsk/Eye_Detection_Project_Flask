@@ -1,136 +1,86 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "1ef2f1ba-cb2a-4290-9ed7-debeeadb91a1",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from flask import Flask, render_template, Response, jsonify\n",
-    "import cv2\n",
-    "import numpy as np\n",
-    "from tensorflow.keras.models import load_model\n",
-    "import time\n",
-    "\n",
-    "app = Flask(__name__)\n",
-    "\n",
-    "# Load model\n",
-    "model = load_model(\"eye_model.keras\")\n",
-    "\n",
-    "face_cascade = cv2.CascadeClassifier(\n",
-    "    cv2.data.haarcascades + \"haarcascade_frontalface_default.xml\"\n",
-    ")\n",
-    "\n",
-    "camera = cv2.VideoCapture(0)\n",
-    "\n",
-    "EYE_CLOSED_THRESHOLD = 3\n",
-    "eye_closed_start = None\n",
-    "\n",
-    "\n",
-    "def generate_frames():\n",
-    "    global eye_closed_start\n",
-    "\n",
-    "    while True:\n",
-    "        success, frame = camera.read()\n",
-    "        if not success:\n",
-    "            break\n",
-    "\n",
-    "        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)\n",
-    "        faces = face_cascade.detectMultiScale(gray, 1.3, 5)\n",
-    "\n",
-    "        status = \"OPEN\"\n",
-    "\n",
-    "        for (x, y, w, h) in faces:\n",
-    "            face = frame[y:y+h, x:x+w]\n",
-    "            resized = cv2.resize(face, (24, 24))\n",
-    "            normalized = resized / 255.0\n",
-    "            reshaped = np.reshape(normalized, (1, 24, 24, 3))\n",
-    "\n",
-    "            prediction = model.predict(reshaped, verbose=0)\n",
-    "\n",
-    "            if prediction < 0.5:\n",
-    "                status = \"CLOSED\"\n",
-    "                color = (0, 0, 255)\n",
-    "            else:\n",
-    "                color = (0, 255, 0)\n",
-    "\n",
-    "            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)\n",
-    "            cv2.putText(frame, status, (x, y-10),\n",
-    "                        cv2.FONT_HERSHEY_SIMPLEX,\n",
-    "                        0.8, color, 2)\n",
-    "\n",
-    "        if status == \"CLOSED\":\n",
-    "            if eye_closed_start is None:\n",
-    "                eye_closed_start = time.time()\n",
-    "            elif time.time() - eye_closed_start > EYE_CLOSED_THRESHOLD:\n",
-    "                status = \"ALERT\"\n",
-    "        else:\n",
-    "            eye_closed_start = None\n",
-    "\n",
-    "        ret, buffer = cv2.imencode('.jpg', frame)\n",
-    "        frame = buffer.tobytes()\n",
-    "\n",
-    "        yield (b'--frame\\r\\n'\n",
-    "               b'Content-Type: image/jpeg\\r\\n\\r\\n' + frame + b'\\r\\n')\n",
-    "\n",
-    "\n",
-    "@app.route('/')\n",
-    "def index():\n",
-    "    return render_template('index.html')\n",
-    "\n",
-    "\n",
-    "@app.route('/video')\n",
-    "def video():\n",
-    "    return Response(generate_frames(),\n",
-    "                    mimetype='multipart/x-mixed-replace; boundary=frame')\n",
-    "\n",
-    "\n",
-    "@app.route('/status')\n",
-    "def status():\n",
-    "    return jsonify({\"status\": \"running\"})\n",
-    "\n",
-    "\n",
-    "if __name__ == \"__main__\":\n",
-    "    app.run(debug=True)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "f5800bbf-296b-4ae6-be33-ba1e834e85d4",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "e2972141-81b3-4c9f-b743-3ee47484a88a",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python [conda env:base] *",
-   "language": "python",
-   "name": "conda-base-py"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.13.5"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+from flask import Flask, render_template, Response, jsonify
+import cv2
+import numpy as np
+from tensorflow.keras.models import load_model
+import time
+
+app = Flask(__name__)
+
+# Load model
+model = load_model("eye_model.keras")
+
+face_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
+
+camera = cv2.VideoCapture(0)
+
+EYE_CLOSED_THRESHOLD = 3
+eye_closed_start = None
+
+
+def generate_frames():
+    global eye_closed_start
+
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+        status = "OPEN"
+
+        for (x, y, w, h) in faces:
+            face = frame[y:y+h, x:x+w]
+            resized = cv2.resize(face, (24, 24))
+            normalized = resized / 255.0
+            reshaped = np.reshape(normalized, (1, 24, 24, 3))
+
+            prediction = model.predict(reshaped, verbose=0)
+
+            if prediction < 0.5:
+                status = "CLOSED"
+                color = (0, 0, 255)
+            else:
+                color = (0, 255, 0)
+
+            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+            cv2.putText(frame, status, (x, y-10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8, color, 2)
+
+        if status == "CLOSED":
+            if eye_closed_start is None:
+                eye_closed_start = time.time()
+            elif time.time() - eye_closed_start > EYE_CLOSED_THRESHOLD:
+                status = "ALERT"
+        else:
+            eye_closed_start = None
+
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/video')
+def video():
+    return Response(generate_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/status')
+def status():
+    return jsonify({"status": "running"})
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
