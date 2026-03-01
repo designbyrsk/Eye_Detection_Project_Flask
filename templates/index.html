@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eye Detection</title>
+</head>
+<body>
+
+<h2>Eye Detection Live</h2>
+
+<img src="{{ url_for('video') }}" width="600">
+
+<audio id="alertSound" src="{{ url_for('static', filename='alert.mp3') }}"></audio>
+
+<script>
+setInterval(function(){
+    fetch('/status')
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === "ALERT"){
+                document.getElementById("alertSound").play();
+            }
+        });
+}, 2000);
+</script>
+
+</body>
+</html>
