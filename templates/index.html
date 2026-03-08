@@ -1,27 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eye Detection</title>
+    <title>Eye Detection AI</title>
 </head>
+
 <body>
 
-<h2>Eye Detection Live</h2>
+<h2>Eye Detection System</h2>
 
-<img src="{{ url_for('video') }}" width="600">
+<video id="video" width="640" height="480" autoplay></video>
 
-<audio id="alertSound" src="{{ url_for('static', filename='alert.mp3') }}"></audio>
+<h3 id="result">Status: Detecting...</h3>
 
-<script>
-setInterval(function(){
-    fetch('/status')
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === "ALERT"){
-                document.getElementById("alertSound").play();
-            }
-        });
-}, 2000);
-</script>
+<script src="/static/script.js"></script>
 
 </body>
 </html>
